@@ -1,0 +1,158 @@
+version: "3.8"
+
+services:
+# Definición de los servicios que se van a ejecutar.
+
+  mongo:
+    container_name: mongo-t
+    # Nombre del contenedor para MongoDB.
+    
+    image: mongo:4.4
+    # Imagen de Docker para MongoDB en su versión 4.4.
+    
+    restart: always
+    # Siempre reinicia el contenedor en caso de fallo.
+    
+    environment:
+      # Variables de entorno para la configuración de MongoDB.
+      TZ: "America/Bogotá"
+      # Zona horaria configurada para Bogotá.
+      
+      MONGO_INITDB_ROOT_USERNAME: "devuser"
+      # Usuario root inicial para MongoDB.
+      
+      MONGO_INITDB_ROOT_PASSWORD: "devpassword"
+      # Contraseña del usuario root inicial para MongoDB.
+      
+    volumes:
+      - ./mongodata:/data/db
+      # Monta el volumen local 'mongodata' en el directorio '/data/db' del contenedor.
+      
+    ports:
+      - 27017:27017
+      # Mapea el puerto 27017 del contenedor al puerto 27017 del host.
+      
+  emqx:
+    container_name: emqx-t
+    # Nombre del contenedor para EMQX.
+    
+    image: emqx/emqx:4.2.3
+    # Imagen de Docker para EMQX en su versión 4.2.3.
+    
+    restart: always
+    # Siempre reinicia el contenedor en caso de fallo.
+    
+    ports:
+      # Mapea los puertos del contenedor a los puertos del host.
+      - 18083:18083
+      - 18084:18084
+      - 1883:1883
+      - 8883:8883
+      - 8083:8083
+      - 8084:8084
+      - 8085:8081
+
+    # volumes:
+    #   - vol-emqx-data:/opt/emqx/data
+    #   - vol-emqx-etc:/opt/emqx/etc
+    #   - vol-emqx-log:/opt/emqx/log
+    # Volúmenes comentados para persistencia de datos, configuración y logs de EMQX.
+    
+    links:
+      - mongo
+      # Enlaza el contenedor de EMQX con el contenedor de MongoDB.
+    extra_hosts: 
+      - "localhost:192.168.209.4"  
+      # http://localhost:3001/api/saver-webhook
+    environment:
+      # Variables de entorno para la configuración de EMQX.
+      
+      EMQX_NAME: iot
+      # Nombre del nodo EMQX.
+      
+      EMQX_HOST: 127.0.0.1
+      # Dirección del host para EMQX.
+      
+      TZ: "America/Bogotá"
+      # Zona horaria configurada para Bogotá.
+
+      # DEFAULT DASH PASS
+      EMQX_DASHBOARD__DEFAULT_USER__PASSWORD: "emqxdashpass"
+      # Contraseña por defecto para el panel de control de EMQX.
+
+      EMQX_MANAGEMENT__DEFAULT_APPLICATION__SECRET: "emqxsecret"
+      
+      EMQX_ALLOW_ANONYMOUS: "false"
+      # No permite conexiones anónimas.
+      
+      EMQX_NOMATCH: "deny"
+      # Deniega los mensajes que no coinciden con ninguna regla.
+
+      # MONGO CONNECTION
+      EMQX_AUTH__MONGO__TYPE: single
+      # Tipo de conexión a MongoDB (sencilla).
+
+      EMQX_AUTH__MONGO__TOPOLOGY__POOL_SIZE: 1
+      # Tamaño del pool de topología para MongoDB.
+      
+      EMQX_AUTH__MONGO__TOPOLOGY__MAX_OVERFLOW: 0
+      # Desbordamiento máximo del pool de topología.
+
+      EMQX_AUTH__MONGO__SERVER: "mongo:27017"
+      # Dirección del servidor MongoDB.
+
+      EMQX_AUTH__MONGO__POOL: 8
+      # Tamaño del pool de conexiones a MongoDB.
+
+      EMQX_AUTH__MONGO__LOGIN: "devuser"
+      # Usuario para autenticación en MongoDB.
+      
+      EMQX_AUTH__MONGO__PASSWORD: "devpassword"
+      # Contraseña para autenticación en MongoDB.
+      
+      EMQX_AUTH__MONGO__AUTH_SOURCE: admin
+      # Fuente de autenticación en MongoDB.
+
+      EMQX_AUTH__MONGO__DATABASE: "iotdb"
+      # Base de datos utilizada en MongoDB para EMQX.
+      
+      EMQX_AUTH__MONGO__AUTH_QUERY__COLLECTION: "emqxauthrules"
+      # Colección en MongoDB para las reglas de autenticación.
+
+      EMQX_AUTH__MONGO__SUPER_QUERY__COLLECTION: "emqxauthrules"
+      # Colección en MongoDB para las consultas de superusuario.
+      
+      EMQX_AUTH__MONGO__SUPER_QUERY__SUPER_FIELD: "is_superuser"
+      # Campo en la colección que indica si un usuario es superusuario.
+      
+      EMQX_AUTH__MONGO__SUPER_QUERY__SELECTOR: "username=%u"
+      # Selector para la consulta de superusuario basada en el nombre de usuario.
+
+      EMQX_AUTH__MONGO__SUPER_QUERY: "off"
+      # Consulta de superusuario desactivada.
+
+      EMQX_AUTH__MONGO__AUTH_QUERY__PASSWORD_HASH: plain
+      # Tipo de hash para la contraseña (plano).
+
+      EMQX_AUTH__MONGO__AUTH_QUERY__PASSWORD_FIELD: "password"
+      # Campo que contiene la contraseña en la colección.
+
+      EMQX_AUTH__MONGO__AUTH_QUERY__SELECTOR: "username=%u"
+      # Selector para la consulta de autenticación basada en el nombre de usuario.
+
+      ## Enable ACL query.
+      # Habilitar consulta de listas de control de acceso.
+      EMQX_AUTH__MONGO__ACL_QUERY: "on"
+      # Activar la consulta ACL.
+
+      EMQX_AUTH__MONGO__ACL_QUERY__COLLECTION: "emqxauthrules"
+      # Colección en MongoDB para las reglas ACL.
+
+      EMQX_AUTH__MONGO__ACL_QUERY__SELECTOR: "username=%u"
+      # Selector para la consulta ACL basada en el nombre de usuario.
+
+      EMQX_LOADED_PLUGINS: "emqx_recon,emqx_retainer,emqx_management,emqx_dashboard, emqx_auth_mongo"
+      # Plugins cargados en EMQX.
+
+      EMQX_LISTENER__TCP__EXTERNAL__MAX_CONNECTIONS: 1000
+      # Número máximo de conexiones TCP externas.

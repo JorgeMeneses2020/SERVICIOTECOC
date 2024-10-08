@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <h1>Hello world</h1>
+</body>
+</html>
+<script src="./mqtt.min.js"></script>
+<script>
+    const options={
+        connectTimeout:4000,
+        clientId:"emqxIddsadadsa",
+        username:"user",
+        password:"pass",
+        keepalive:60,
+        clean:true
+    }
+
+    var connect=false;
+    var url= "ws://localhost:8083/mqtt"
+    const client= mqtt.connect(url, options);
+
+    client.on('connect',()=>{
+        console.log('Mqtt conectado por WS! Exito!');
+        client.subscribe('a/a', {
+        qos: 0
+      }, (error) => {
+        if (!error) {
+          console.log('Suscripción exitosa!')
+        } else {
+          console.log('Suscripción fallida!')
+        }
+      })
+    
+      client.publish('a/a', 'esto es un verdadero éxito', (error) => {
+        console.log(error || 'Mensaje enviado!!!')
+      })
+    
+    })
+
+    client.on('message', (topic, message) => {
+      console.log('Mensaje recibido bajo tópico: ', topic, ' -> ', message.toString())
+    //   process_msg(topic, message);
+    })
+
+
+</script>
